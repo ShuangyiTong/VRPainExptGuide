@@ -14,7 +14,7 @@ VR has been studied many years. Enormous engineering effort has been put into ma
 
 ### What are the challenges / differences of a VR experiment
 
-In terms of the actual development, as we will see shortly, VR games uses the same development platform as other non-VR games. It only changes two things: the way it outputs graphics and the way of interaction (input). A game engine or the VR manufacturer's software package usually does most of the things for us. What more important for us is VR's realistic experience can cause some necessary changes to existing paradigms.
+In terms of the actual development, as we will see shortly, VR games use the same development platform as other non-VR games. It only changes two things: the way it outputs graphics (binocular vision) and the way of interaction (motion capture and controllers). A game engine or the VR manufacturer's software package usually does most of the things for us. What more important for us is VR's realistic experience can cause some necessary changes to existing paradigms.
 
 - VR environments and all objects within are 3D. If you want to present a 2D cue, it needs to be on some plane in 3D. You would always allow the vision rotates when people rotate their head, otherwise it can cause dizziness. Therefore, the 3D spatial location of a cue relative to the subject is important.
 - VR experiments usually run continuously. In a monitor-based task, a cue displays on a screen, and the subject presses a key. In VR, instead of pressing a key instantly, it can take certain amount of time to complete an action. For example, reaching an object in a go / no go task with real arm movement does not complete instantly but rather a continuous action.
@@ -39,3 +39,12 @@ Other lab / clinical equipment that were used previously in conventional experim
 ### Software
 
 Operating system: We would recommend to use Windows 10 / 11 operating system.
+Game engine: 
+
+## Example - Simple Bandit Task
+
+### Steps
+
+1. From asset store import [SteamVR](https://assetstore.unity.com/packages/tools/integration/steamvr-plugin-32647), [HUD for VR - Sterile Future](https://assetstore.unity.com/packages/2d/gui/icons/hud-for-vr-sterile-future-120259), [pixel modern office extras](https://assetstore.unity.com/packages/3d/environments/urban/pixel-modern-office-extras-225670).
+2. Create a floor (a plane with material) and place objects (chairs, desks) in the scene.
+3. Create a trial start button.
