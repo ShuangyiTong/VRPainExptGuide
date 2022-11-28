@@ -1,8 +1,23 @@
 # A guide to set up virtual reality experiments
 
 ## Table of Contents
-1. [Overview](#overview)
-2. [Preparation](#preparation)
+- [A guide to set up virtual reality experiments](#a-guide-to-set-up-virtual-reality-experiments)
+  - [Table of Contents](#table-of-contents)
+  - [Overview](#overview)
+    - [What are the new things in VR compared to a traditional computer](#what-are-the-new-things-in-vr-compared-to-a-traditional-computer)
+    - [What are the challenges / differences of a VR experiment](#what-are-the-challenges--differences-of-a-vr-experiment)
+- [Part 1: Simple Task Setup](#part-1-simple-task-setup)
+  - [Preparation](#preparation)
+    - [Hardware](#hardware)
+    - [Software](#software)
+  - [Example - Simple Bandit Task](#example---simple-bandit-task)
+    - [Steps](#steps)
+  - [Example - Physical foraging task in maze](#example---physical-foraging-task-in-maze)
+  - [Example - Realistic rendering environment](#example---realistic-rendering-environment)
+- [Part 2 Linking other data streams](#part-2-linking-other-data-streams)
+  - [Collecting data streams outside Unity](#collecting-data-streams-outside-unity)
+  - [Apply stimulation feedback](#apply-stimulation-feedback)
+  - [Scriptable closed-loop task control](#scriptable-closed-loop-task-control)
 
 ## Overview
 
@@ -21,11 +36,12 @@ In terms of the actual development, as we will see shortly, VR games use the sam
 
 One can always fall back to use VR headset as a big screen, and all interaction is done by pressing keys. In that case, it might be easier to run a monitor-based task rather than seeking to use VR.
 
+# Part 1: Simple Task Setup
 ## Preparation
 
 ### Hardware
 
-VR headset: There are two main stream VR headsets. One is PC-based and the headset is essentially a display. HTC Vive is the main manufacturer for PC-based VR. The other one is a standalone headset which the headset has a mobile operating system installed. Standalone headset has poorer performance, but it can be connected to PC and acts as a display for PC VR as well. We currently use HTC Vive Pro Eye for lab experiments. It was the only headset with built-in eye tracking functionality when we made the purchase. However, there are more companies developing high-end VR headsets now. Recently released Pico 4 Enterprise and Meta Quest Pro are also equipped with eye tracking. We are keen to test their possibility to be used in lab environment. Pico 4 Enterprise and Meta Quest Pro are standalone headsets.
+VR headset: There are two main stream VR headsets. One is PC-based and the headset is essentially a display. HTC Vive is the main manufacturer for PC-based VR. The other one is a standalone headset which the headset has a mobile operating system installed. Standalone headset has generally poorer performance when running on its own, but it can be connected to PC and acts as a display for PC VR as well. We currently use HTC Vive Pro Eye for lab experiments. It was the only headset with built-in eye tracking functionality when we made the purchase. However, there are more companies developing high-end VR headsets now. Recently released Pico 4 Enterprise and Meta Quest Pro are also equipped with eye tracking. We are keen to test their possibility to be used in lab environment. Pico 4 Enterprise and Meta Quest Pro are both standalone headsets.
 
 We still prefer to use PC-based VR, not only because PC is more powerful but also PC can handle other datastream from other devices better (for example, EEG data). VR application usually require a good graphics hardware to run the game. Hardware updates frequently, so here we only show our currently running lab PC's specifications.
 
@@ -47,4 +63,19 @@ Game engine:
 
 1. From asset store import [SteamVR](https://assetstore.unity.com/packages/tools/integration/steamvr-plugin-32647), [HUD for VR - Sterile Future](https://assetstore.unity.com/packages/2d/gui/icons/hud-for-vr-sterile-future-120259), [pixel modern office extras](https://assetstore.unity.com/packages/3d/environments/urban/pixel-modern-office-extras-225670).
 2. Create a floor (a plane with material) and place objects (chairs, desks) in the scene.
-3. Create a trial start button.
+3. Create a trial start button and point display.
+![Task setup](imgs/BanditExampleLevelDesign.PNG)
+4. Place player prefab from `SteamVR/InteractionSystem/Core/Prefabs`
+5. Create a new game object called TaskControl, add [task control script]() to the game object as a component.
+
+## Example - Physical foraging task in maze
+
+## Example - Realistic rendering environment
+
+# Part 2 Linking other data streams
+
+## Collecting data streams outside Unity
+
+## Apply stimulation feedback
+
+## Scriptable closed-loop task control
