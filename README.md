@@ -12,7 +12,9 @@
     - [Software](#software)
   - [Example - Simple Bandit Task](#example---simple-bandit-task)
     - [Steps](#steps)
+    - [Summary](#summary)
   - [Example - Physical foraging task in maze](#example---physical-foraging-task-in-maze)
+    - [Steps](#steps-1)
   - [Example - Realistic rendering environment](#example---realistic-rendering-environment)
 - [Part 2 Linking other data streams](#part-2-linking-other-data-streams)
   - [Collecting data streams outside Unity](#collecting-data-streams-outside-unity)
@@ -55,10 +57,10 @@ Other lab / clinical equipment that were used previously in conventional experim
 ### Software
 
 Operating system: We would recommend to use Windows 10 / 11 operating system.
-Game engine: 
+Game engine: [TODO]
 
 ## Example - Simple Bandit Task
-
+The first example is a simple bandit task where participants are asked to pick one book on the desk. Different books give different rewards.
 ### Steps
 
 1. **Assets import**: From asset store import [SteamVR](https://assetstore.unity.com/packages/tools/integration/steamvr-plugin-32647), [pixel modern office extras](https://assetstore.unity.com/packages/3d/environments/urban/pixel-modern-office-extras-225670).
@@ -150,12 +152,27 @@ Game engine:
           }
       }
       ```
-   This completes the whole simple experiment design. Of course, we still need to save the behavioural data and possibly connecting and synchronise with other devices like EEG, which will be covered in part 2. Unforturnately due to [Unity Asset Store EULA](https://unity.com/legal/as-terms), we may not distribute the full project containing Asset Store materials, but you can download a build version here: 
+   This completes the whole simple experiment design. Of course, we still need to save the behavioural data and possibly connecting and synchronise with other devices like EEG, which will be covered in part 2. Unforturnately due to [Unity Asset Store EULA](https://unity.com/legal/as-terms), we may not distribute the full project containing Asset Store materials, but you can download a build version here: [TODO]
 
+### Summary
+[TODO]
 ## Example - Physical foraging task in maze
+The second task is a maze task where participants navigate through a maze and collect gold bar that is scattered in the maze. 
+### Steps
 
-1. From asset store import [HUD for VR - Sterile Future](https://assetstore.unity.com/packages/2d/gui/icons/hud-for-vr-sterile-future-120259), 
+1. **Assets import**: From asset store download and import [HUD for VR - Sterile Future](https://assetstore.unity.com/packages/2d/gui/icons/hud-for-vr-sterile-future-120259), [Outdoor Ground Textures](https://assetstore.unity.com/packages/2d/textures-materials/floors/outdoor-ground-textures-12555), [18 High Resolution Wall Textures](https://assetstore.unity.com/packages/2d/textures-materials/brick/18-high-resolution-wall-textures-12567), [Medieval Gold](https://assetstore.unity.com/packages/3d/props/medieval-gold-14162), [SteamVR](https://assetstore.unity.com/packages/tools/integration/steamvr-plugin-32647).
+2. **Level design**: 
+    - The maze: You can create a maze by deforming 3d cubes into walls. We provide a very simple maze to download to use as an example: [Maze package](unity_packages/Maze.unitypackage).
+    - Player and UI: In this example we use a virtual dashboard as the main UI for people to interact with. You can download and import our pre-coded UI dashboard here: [Player UI](unity_packages/PlayerUI_NoSteamVRInput.unitypackage). SteamVR input may not set correctly. To do that, click Window->SteamVR Input. Create a menu binary input if it does not exist. Save and generate. Open Binding UI, and check if all inputs have been assigned. Adjust canvas size if necessary in Board->Canvas Layer->CanvasLocationControl->Canvas.
+    - Then place prefabs `Resources/Prefabs/Board` and `Resources/Prefabs/Players` in the scene. Assign properties under Board UI Manager correctly. This includes `Menu Button`, `Trigger`, `Left Hand`, and `Right Hand`. Left hand and right hand should be from Player's hands. 
+    - Make `Medieval_Gold/i_gnot` a prefab saved in `Resource/Prefabs/1_ignot` by dragging it to the scene and drag to the asset folder.
+![Task Setup](imgs/MazeExampleLevelDesign.PNG)
+3. **Task execution**
 ## Example - Realistic rendering environment
+
+The above examples use Unity standard render pipeline which uses [forward rendering](https://docs.unity3d.com/Manual/RenderingPaths.html). It is fast and friendly to low performance computers / mobile devices, but the graphics quality is not great. Other render pipeline like [High Definition Render Pipeline (HDRP)](https://docs.unity3d.com/Packages/com.unity.render-pipelines.high-definition@14.0/manual/index.html) uses deferred shading as the default rendering path which gives much better quality but is much more computationally expensive.
+![Jungle](imgs/JungleHDRPExample.PNG)
+One of our experiments in a realistic jungle environment.
 
 # Part 2 Linking other data streams
 
