@@ -61,15 +61,100 @@ Game engine:
 
 ### Steps
 
-1. From asset store import [SteamVR](https://assetstore.unity.com/packages/tools/integration/steamvr-plugin-32647), [HUD for VR - Sterile Future](https://assetstore.unity.com/packages/2d/gui/icons/hud-for-vr-sterile-future-120259), [pixel modern office extras](https://assetstore.unity.com/packages/3d/environments/urban/pixel-modern-office-extras-225670).
-2. Create a floor (a plane with material) and place objects (chairs, desks) in the scene.
-3. Create a trial start button and point display.
+1. **Assets import**: From asset store import [SteamVR](https://assetstore.unity.com/packages/tools/integration/steamvr-plugin-32647), [pixel modern office extras](https://assetstore.unity.com/packages/3d/environments/urban/pixel-modern-office-extras-225670).
+2. **Level design**:
+   - Create a floor by create a new plane. You can attach certain texture (e.g. wood) to the plane.
+   - Place objects (chairs, desks) from the assets we just imported on the floor.
+   - Place player prefab from `SteamVR/InteractionSystem/Core/Prefabs`
+3. **UI design**: 
+   - Create a trial start button with a cube and a TextMeshPro object (or UI text) placing on the desk.
+   - Create a score board display in front of the desk using TextMeshPro object (or UI text) object.
 ![Task setup](imgs/BanditExampleLevelDesign.PNG)
-4. Place player prefab from `SteamVR/InteractionSystem/Core/Prefabs`
-5. Create a new game object called TaskControl, add [task control script]() to the game object as a component.
+1. **Task execution**: Create a new game object called TaskControl, add [task control script (complete version)](sources/Example1/TaskControl.cs) to the game object as a component. Using a separate script to control the global task progress is a neat way to write the task execution logic. This task is simple. The participant touches the start button, the options (books) are now available to choose. Once the participant picks a choice (by touching the book), reward points displayed in front of them. The start button is now available to be pressed again. We do this step by step.
+
+   - Everything starts from the participant pressing the button. We use collider to do this (so in fact it is touching the button rather than pressing the button). So we create a [button pressing script (complete version)](sources/Example1/ButtonPressing.cs) and attach it to the button object so that when the button is touched with hand, `OnCollisionEnter` will be called (if the button has a collider. If not, simply add a box collider to the button gameobject).
+      ```C#
+      private void OnCollisionEnter(Collision collision)
+        {
+            if (!disableButton)
+            {
+                buttonPressed = true;
+                transform.GetChild(0).GetComponent<TextMeshPro>().SetText("Pick one book");
+                taskControl.StartButtonPressed();
+            }
+        }
+      ```
+      This function does three things: set the button state to pressed which is a member variable that we should defined it earlier (see [the complete version](sources/Example1/ButtonPressing.cs)). We also then change the instruction to "Pick one book" shown on the button. Note here we make the text object a child object of the button so that we can find it by calling `transform.GetChild(0)`. There is no other child, so the first one with index 0 is the text object. Lastly, we need to tell the task control script that this button is pressed by calling the public member function `StartButtonPressed` of `TaskControl`.
+
+      We then would like to have some animation effect for the button. When the button is pressed, we would like to have it gradually lowering down to create a 'pressed' feeling. The distance and speed requires manual tweaking. It is called in `FixedUpdate` so that it is update at constant rate. If you want to rather update it in `Update`, which two calls are called in a variable time interval, you need to calculate the moving distance using time passed since last frame to ensure the button moves at deterministic speed.
+      ```C#
+      private void FixedUpdate()
+      {
+          if (buttonPressed)
+          {
+              if (originVerticalHeight - gameObject.transform.position.y < verticalMovingDistance)
+              {
+                  gameObject.transform.position = new Vector3(gameObject.transform.position.x, gameObject.transform.position.y - movingSpeed, gameObject.transform.position.z);
+              }
+          }
+      }
+      ```
+      The `TaskControl` component then knows the button is now pressed through the function call `StartButtonPressed`, it simply sets a flag indicating it is now in a new trial and it will then handle the book choice correctly.
+
+   - Next we need another script for each choice (book): [choice handling (complete version)](sources/Example1/ChoiceHandling.cs). It does two things: a. tell `TaskControl` if the hand has collided a book and which book is in collision, which means if the participant made a choice, b. highlight the book by changing the material when the hand is in collision with the book. This is done by the following code
+      ```C#
+      private void OnCollisionEnter(Collision collision)
+      {
+          taskControl.ObjectSelected(transform.name);
+          material.SetColor("_Color", Color.yellow);
+      }
+
+      private void OnCollisionExit(Collision collision)
+      {
+          material.SetColor("_Color", Color.white);
+      }
+      ```
+      Let us go back to `TaskControl.ObjectSelected`. If it is in Trial (after button is pressed), the reward points is set depending on the choice. Here two choices are associated deterministically reward, so it is a boring bandit task. If total trial count `trialCount` exceeds maximum trials `totalTrials`, we will disable the button and the participant won't be able to start a new trial. 
+      ```C#
+      if (inTrial)
+      {
+          if (name == "book.001")
+          {
+              rewardText.SetText("+1 point");
+          }
+          else
+          {
+              rewardText.SetText("+0.5 point");
+          }
+          rewardPopUp.SetActive(true);
+          lastRewardPopUp = Time.time;
+          inTrial = false;
+          button.ResetButtonState();
+          trialCount += 1;
+          if (trialCount >= totalTrials)
+          {
+              button.disableButton = true;
+          }
+      }
+      ```
+      The reward points pop-up is only shown temporary. We record the time it is set active, then turn it off after 1 second in the `Update` function.
+      ```C#
+      void Update()
+      {
+          if (rewardPopUp.activeSelf)
+          {
+              if (Time.time - lastRewardPopUp > 1)
+              {
+                  rewardPopUp.SetActive(false);
+              }
+          }
+      }
+      ```
+   This completes the whole simple experiment design. Of course, we still need to save the behavioural data and possibly connecting and synchronise with other devices like EEG, which will be covered in part 2. Unforturnately due to [Unity Asset Store EULA](https://unity.com/legal/as-terms), we may not distribute the full project containing Asset Store materials, but you can download a build version here: 
 
 ## Example - Physical foraging task in maze
 
+1. From asset store import [HUD for VR - Sterile Future](https://assetstore.unity.com/packages/2d/gui/icons/hud-for-vr-sterile-future-120259), 
 ## Example - Realistic rendering environment
 
 # Part 2 Linking other data streams
