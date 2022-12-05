@@ -167,7 +167,143 @@ The second task is a maze task where participants navigate through a maze and co
     - Then place prefabs `Resources/Prefabs/Board` and `Resources/Prefabs/Players` in the scene. Assign properties under Board UI Manager correctly. This includes `Menu Button`, `Trigger`, `Left Hand`, and `Right Hand`. Left hand and right hand should be from Player's hands. 
     - Make `Medieval_Gold/i_gnot` a prefab saved in `Resource/Prefabs/1_ignot` by dragging it to the scene and drag to the asset folder.
 ![Task Setup](imgs/MazeExampleLevelDesign.PNG)
-3. **Task execution**
+3. **Task execution**: 
+     - Now we have a UI dashboard. It can be turned on/off by pressing the menu button bind to the controller. We can implement this by adding the following code to the `Update` function (See [complete Task control script](sources/Example2/TaskControl.cs)).
+        ```C#
+        if (UIManager.userAction == "MenuButtonPressed")
+        {
+            toggleUI ^= 1;
+            UIManager.SetBoardDisplay(Convert.ToBoolean(toggleUI));
+            UIManager.userAction = "";
+        }
+        ```
+        When the menu button is pressed, the `UIManager.userAction` will be set to "MenuButtonPressed". We check it in every `Update` function call and take action (i.e. change the dashboard display status). We need to reset it back to "". The way we do it is different from conventional UI handling where you process everything in some callback function triggered by a key pressing. It is however more modular and keeping the entire control logic within the `Update` function. This advantage will be more obvious when it comes to our external interactive control interface. 
+     - The task is very simple. It consists of two states: `Idle` and `InTrial`. For game design, it is helpful to refer to the [Finite-state machine (FSM)](https://en.wikipedia.org/wiki/Finite-state_machine) as the model. Here, we have two states. When the participant click start, the task state transits from `Idle` to `InTrial` and spawn a gold bar for the participant to pick up. When the participant pick up the gold bar, or time is up, the task state goes back to `Idle` again. 
+        ```C#
+        if (TaskState == "Idle")
+        {
+            if (UIManager.boardCommand == "ConfirmButtonPressed")
+            {
+                GenerateItems();
+                UIManager.SetBoardDisplay(false);
+                toggleUI = 0;
+                trialStartTime = Time.time;
+                UIManager.boardCommand = "";
+                TaskState = "InTrial";
+            }
+        }
+        else if (TaskState == "InTrial")
+        {
+            bool foundObject = false;
+            Player player = Player.instance;
+            if (player)
+            {
+                foreach (Hand hand in player.hands)
+                {
+                    GameObject attachedObject = hand.currentAttachedObject;
+                    if (attachedObject != null)
+                    {
+                        foundObject = true;
+                    }
+                }
+            }
+            
+            if (foundObject)
+            {
+                UIManager.SetBoardDisplay(true);
+                UIManager.SetMainText("You found the object! Click to continue");
+                toggleUI = 1;
+                TaskState = "Idle";
+                Destroy(GameObject.Find("goldbar"));
+            }
+
+            if ((Time.time - trialStartTime > 60) && !foundObject)
+            {
+                UIManager.SetBoardDisplay(true);
+                UIManager.SetMainText("Time is up! Click to to try again");
+                toggleUI = 1;
+                TaskState = "Idle";
+                Destroy(GameObject.Find("goldbar"));
+            }
+        }
+        ```
+4. **Going through walls**: Now we have completed the task execution logic. One might already notice our walls in the virtual world is useless! If you don't have a wall in real world, then you can go through a wall in virtual world. Generally, there are three (or four) ways of dealing with this:
+    
+    1. Avoid using walls. Don't add walls unless you really need to.
+    2. Fade the screen to black when hitting the wall.
+    3. Use controller buttons to move forward rather than real body movement.
+    4. Stop the player's camera going into the wall by adding an offset to the camera if the participant is moving in the wall direction. 
+   
+   In commercial VR game development, all strategies are used. However, when we are running experiments, it could be better to use one single moving strategy. For example, in a VR game, you are usually allowed to move with controller buttons as well as real body movement. Unless you want to compare people's preference of this two interaction ways, I think in experiments, to keep the behavioural data more controlled, it is better to either use controller only or use real body movement. 
+
+   **Fade to black on collision**: The key thing here is to overlay a black layer to the screen output. `OpenVR.Compositor` has a function called `FadeToColor` that allows to overlay a colour layer on top of the game visual output. We also ned to detect head collision with the wall. It is not a good idea to put a collider on the VR camera itself because in Unity the collision can only be detected when there is a rigid body attached to one of the collided objects. We then create a separate game object with a small box collider and non-kinematic rigid body and attach the [following script](sources/Example2/DarkenOnCollision.cs) to it:
+   ```C#
+    void Update()
+    {
+        transform.position = Camera.main.transform.position;
+    }
+
+    void OnCollisionEnter(Collision collision)
+    {
+        SteamVR_Fade.View(new Color(0, 0, 0, 0.995f), 0.1f);
+    }
+
+    void OnCollisionExit(Collision collision)
+    {
+        SteamVR_Fade.View(new Color(0, 0, 0, 0), 0.1f);
+    }
+   ```
+   The code will put a 0.5% transparent mask when the head collides with some objects and removes the mask if the collision exits.
+
+   **Movement controlled by hand controller**: Add a character controller component to the Player (tracking origin) gameobject and attach [this script](sources/Example2/VRController.cs) to active gameobject should enable moving in the head direction by pressing the  `squeeze` button on the controller.
+
+   A new problem with this approach is the collision detection is only enabled for the collider created at Player's position. This is not the same as the actual VR headset position unless the participant sits in the centre of the tracking area. We can either ask the participant to sit in the centre of the tracking region we pre-calibrated, or disable the position tracking. To disable tracking, you can make the Player scale extremely small. Or for more robust solution, if you are using Unity XR mode (at the beginning when you import SteamVR package), change `SteamVR/InteractionSystem/Core/Scripts/Player.cs` line 268, 269 to:
+   ```C#
+   if (hmd.GetComponent<UnityEngine.SpatialTracking.TrackedPoseDriver>() == null)
+    {
+        hmd.gameObject.AddComponent<UnityEngine.SpatialTracking.TrackedPoseDriver>();
+        // changed this to enable only rotation tracking
+        hmd.gameObject.GetComponent<UnityEngine.SpatialTracking.TrackedPoseDriver>().trackingType = UnityEngine.SpatialTracking.TrackedPoseDriver.TrackingType.RotationOnly;
+   }
+   ```
+   which change the `TrackedPoseDriver` to `RotationOnly`, and replace `SteamVR_Behaviour_Pose` component for each hand with the following `Custom_Behaviour_Pose` component:
+    ```C#
+    using System;
+    using System.Threading;
+    using System.Collections;
+    using System.Collections.Generic;
+    using UnityEngine;
+    using UnityEngine.Events;
+
+    using Valve.VR;
+
+    public class Custom_Behaviour_Pose : SteamVR_Behaviour_Pose
+    {
+        public GameObject VRCamera;
+        
+        protected override void UpdateTransform()
+        {
+            CheckDeviceIndex();
+
+            if (origin != null)
+            {
+                Vector3 trackedPosition = poseAction[inputSource].localPosition;
+                Vector3 hmdTrackedPosition = VRCamera.GetComponent<UnityEngine.SpatialTracking.TrackedPoseDriver>().trackedPosition;
+
+                transform.position = origin.transform.TransformPoint(trackedPosition - hmdTrackedPosition);
+                transform.rotation = origin.rotation * poseAction[inputSource].localRotation;
+            }
+            else
+            {
+                transform.localPosition = poseAction[inputSource].localPosition;
+                transform.localRotation = poseAction[inputSource].localRotation;
+            }
+        }
+    }
+    ```
+    One thing to note is once you disabled real movements in VR, it is important to make sure participants' head are still. Moving physically while not moving visually can cause strong motion sickness. 
+
+    **Add offset to the headset**: Another popular solution in VR games is to add offset to the headset if the headset is moving into the virtual wall. However, one problem with this is the offset can add up and it could be too much that the centre of the virtual world is on the edge of the real world. Usually, those games implement a reset feature that resets the virtual centre to the current position. For running experiments, this extra unnatural re-centre feature could be a confounder for the behavioural data depending on the research question of your study.
 ## Example - Realistic rendering environment
 
 The above examples use Unity standard render pipeline which uses [forward rendering](https://docs.unity3d.com/Manual/RenderingPaths.html). It is fast and friendly to low performance computers / mobile devices, but the graphics quality is not great. Other render pipeline like [High Definition Render Pipeline (HDRP)](https://docs.unity3d.com/Packages/com.unity.render-pipelines.high-definition@14.0/manual/index.html) uses deferred shading as the default rendering path which gives much better quality but is much more computationally expensive.
