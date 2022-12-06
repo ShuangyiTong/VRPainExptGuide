@@ -4,7 +4,7 @@
 - [A guide to set up virtual reality experiments](#a-guide-to-set-up-virtual-reality-experiments)
   - [Table of Contents](#table-of-contents)
   - [Overview](#overview)
-    - [What are the new things in VR compared to a traditional computer](#what-are-the-new-things-in-vr-compared-to-a-traditional-computer)
+    - [What are the new things in VR compared to sitting in front of a traditional computer screen](#what-are-the-new-things-in-vr-compared-to-sitting-in-front-of-a-traditional-computer-screen)
     - [What are the challenges / differences of a VR experiment](#what-are-the-challenges--differences-of-a-vr-experiment)
 - [Part 1: Simple Task Setup](#part-1-simple-task-setup)
   - [Preparation](#preparation)
@@ -12,20 +12,25 @@
     - [Software](#software)
   - [Example - Simple Bandit Task](#example---simple-bandit-task)
     - [Steps](#steps)
-    - [Summary](#summary)
   - [Example - Physical foraging task in maze](#example---physical-foraging-task-in-maze)
     - [Steps](#steps-1)
   - [Example - Realistic rendering environment](#example---realistic-rendering-environment)
 - [Part 2 Linking other data streams](#part-2-linking-other-data-streams)
-  - [Collecting data streams outside Unity](#collecting-data-streams-outside-unity)
+  - [Collecting and saving more data streams](#collecting-and-saving-more-data-streams)
+    - [Collect data in Unity](#collect-data-in-unity)
+      - [Motion tracking data](#motion-tracking-data)
+      - [Eye tracking data](#eye-tracking-data)
+      - [Bluetooth heart rate monitor](#bluetooth-heart-rate-monitor)
+      - [Kinect? Leap Motion?](#kinect-leap-motion)
+    - [Collect data outside Unity](#collect-data-outside-unity)
   - [Apply stimulation feedback](#apply-stimulation-feedback)
-  - [Scriptable closed-loop task control](#scriptable-closed-loop-task-control)
+  - [Closed-loop task control with ad-hoc scripts](#closed-loop-task-control-with-ad-hoc-scripts)
 
 ## Overview
 
 Virtual reality (VR) is a new technology that brings new ways of presenting visual stimuli and interaction with a virtual environment, which makes it valuable for designing novel experiment paradigms. This guide is intended to help researchers with some experience setting up computer-based experiments (e.g. Psychopy, Psychtoolbox etc.) to get started with VR experiments.
 
-### What are the new things in VR compared to a traditional computer
+### What are the new things in VR compared to sitting in front of a traditional computer screen
 
 VR has been studied many years. Enormous engineering effort has been put into making virtual experience more realistic. Current VR technology advances might be categorised into two topics: vision and interaction. Vision is benefit from the fast developing computer graphics technology, for example, faster graphics processing and algorithm render virtual environment to realistic visual stimuli, and higher pixel density makes it possible to present a high resolution image on the screen of a wearable headset. Interaction advances are probably attributed to more robust and simpler motion tracking technology. Interaction are done by interacting with virtual objects in 3D space. This is much more natural than using a mouse and a keyboard.
 
@@ -57,7 +62,12 @@ Other lab / clinical equipment that were used previously in conventional experim
 ### Software
 
 Operating system: We would recommend to use Windows 10 / 11 operating system.
-Game engine: [TODO]
+
+Game engine: VR environment is inherently 3D. Therefore, 3D game engine is the platform to develop VR applications. Game engine is a productivity software with many tools to help develop games efficiently. Popular public accessible 3D game engines with VR integration support include [Unity](https://unity.com/), [Unreal](https://www.unrealengine.com/en-US), and [CryEngine](https://www.cryengine.com/). All three are free to use with licenses for non-commercial use. Unity is probably the easiest one to start among all three. We use **Unity 2019.4 LTS** for our current studies. It would be the best to follow Unity's official tutorials if you are new to game development.
+
+SteamVR: [SteamVR](https://store.steampowered.com/app/250820/SteamVR/) is a widely used VR development and runtime software. SteamVR provides software development kit for developers to make VR games in Unity and other game engines. It also provides useful interaction library to develop VR games quickly. SteamVR is developed by Valve Corporation who owns a major video game distribution platform Steam. Therefore, if you want to obtain a copy of SteamVR, you need to download it through Steam. If you download SteamVR through Steam, whenever you launch SteamVR, Steam would launch automatically. However, if you are registered as a business user of Valve's hardware partner HTC Vive, you can obtain an offline version of SteamVR through Vive. 
+
+SteamVR has not been updated for a while. As more players come to the VR industry, we could see more diverse VR ecosystem.
 
 ## Example - Simple Bandit Task
 The first example is a simple bandit task where participants are asked to pick one book on the desk. Different books give different rewards.
@@ -152,10 +162,8 @@ The first example is a simple bandit task where participants are asked to pick o
           }
       }
       ```
-   This completes the whole simple experiment design. Of course, we still need to save the behavioural data and possibly connecting and synchronise with other devices like EEG, which will be covered in part 2. Unforturnately due to [Unity Asset Store EULA](https://unity.com/legal/as-terms), we may not distribute the full project containing Asset Store materials, but you can download a build version here: [TODO]
+   This completes the whole simple experiment design. Of course, we still need to save the behavioural data and possibly connecting and synchronise with other devices like EEG, which will be covered in part 2. Unforturnately due to [Unity Asset Store EULA](https://unity.com/legal/as-terms), we may not distribute the full project containing Asset Store materials, but you can download a build version here: [TODO: Insert download link here]
 
-### Summary
-[TODO]
 ## Example - Physical foraging task in maze
 The second task is a maze task where participants navigate through a maze and collect gold bar that is scattered in the maze. 
 ### Steps
@@ -312,8 +320,44 @@ One of our experiments in a realistic jungle environment.
 
 # Part 2 Linking other data streams
 
-## Collecting data streams outside Unity
+For this part, we will discuss more things happening outside Unity. For more information and code bases of our software infrastructure, please refer to [PainLabInteractiveControlPanel
+](https://github.com/ShuangyiTong/PainLabInteractiveControlPanel).
+## Collecting and saving more data streams
+Perhaps, one key difference between Unity-based studies and other conventional 2D studies in programming is Unity has higher concurrency and demands higher real-time performance. Conventional experiment has clear steps, something like "displaying cue" -> "subject response" -> "reward / punishment". Unity is running through all active game object's components and each `Update` function should be completed quickly rather than doing something and waiting in PsychoPy. This can be done through asynchronous function calls or multi-threading. 
+### Collect data in Unity
+To collect data in Unity, one needs to write or utilise packages that reads external data into Unity, which is usually C# programming. 
+#### Motion tracking data
+Point tracking can be added separately with [Vive Tracker](https://www.vive.com/uk/accessory/tracker3/). By attaching a `SteamVR_Behaviour_Pose` component to some game object and correctly configure Pose input (Note a [SteamVR existing issue](https://steamcommunity.com/app/250820/discussions/4/3949029052301918254/)), the tracking data then can be retrieved from the game object's position.
+[TODO: Add screenshots]
+#### Eye tracking data
+With HTC Vive Pro Eye headset, eye tracking data can be collected in Unity through [Eye and Facial Tracking SDK](https://developer.vive.com/resources/vive-sense/eye-and-facial-tracking-sdk/). It not only tracks the direction of the eyeball, but also provides real-time pupil sizes.
+[TODO: Add screenshots / code]
+#### Bluetooth heart rate monitor
+[TODO]
+#### Kinect? Leap Motion?
+[TODO]
+### Collect data outside Unity
+Collecting data outside Unity usually requires some type of communication between Unity and the program collecting the data. Some protocol like [labstreaminglayer](https://github.com/sccn/labstreaminglayer) has Unity package that can help with that. But sometimes, just recording the data from some other external software (e.g. [BrainVision Recorder](https://brainvision.com/products/recorder/)) works as well. The key question is how to synchronize data recorded in a separate software without communicating with Unity. A simple way is to use timestamps. Both Unity and another third-party software records timestamp from operating system's clock (For researchers who are more familiar with marker synchronization rather than a sequence of timestamps, you can check out [this article by Labstreaminglayer developer](https://labstreaminglayer.readthedocs.io/info/time_synchronization.html)). 
 
+We did develop a series of software aims to resolve this issue in one solution. We developed an application layer simple bi-directional data exchange protocol over TCP (PainLabProtocol). PainLabProtocol is similar to Labstreaminglayer but less sophisticated. Its performance may be poorer compared to other protocols like Labstreaminglayer or more efficient game server protocols over UDP, but it emphasizes data readability (transmit and saved in Javascript) and flexibility in data format. The key software here is a interactive control panel ([PainLabInteractiveControlPanel](https://github.com/ShuangyiTong/PainLabInteractiveControlPanel)). It acts as the server to collect data from different devices that speaks PainLabProtocol including [Unity](https://github.com/ShuangyiTong/PainLabDeviceNIDAQDotNet4.5VS2012/blob/master/PainLabDeviceNIDAQDotNet4.5VS2012/PainlabProtocol.cs), [Arduino](https://github.com/ShuangyiTong/PainLabDeviceEmbedded), [NI DAQ](https://github.com/ShuangyiTong/PainLabDeviceNIDAQDotNet4.5VS2012), [Azure speech recognition](https://github.com/ShuangyiTong/PainLabDeviceVoiceRecognitionAzure), and [Brain Products, g.tec LSL connector](https://github.com/ShuangyiTong/PainLabLSLCompatibilityLayerLiveAmp). It is similar to data acquisition software like [BrainVision Recorder](https://brainvision.com/products/recorder/) or [Labrecorder](https://github.com/labstreaminglayer/App-LabRecorder), but it also includes the functionality to send command to the device and allows you to plug in scripts to control the task easily in real-time.
+
+[TODO: add control panel screenshot]
 ## Apply stimulation feedback
 
-## Scriptable closed-loop task control
+[TODO?: simple server / client implementation]
+
+With the interactive control panel, here is a simple example that sends shock every 1 second.
+```javascript
+const stimulator_id = "SC91BBkyiIWxnJMipKYk";
+var last_shocked = Date.now();
+
+actionFunction = (device_id, dataframe) => {
+    if (Date.now() - last_shocked > 1000) {
+        sendCommand(stimulator_id, "normalised_current_level", 3);
+        last_shocked = Date.now();
+    }
+}
+```
+[TODO: explanation]
+## Closed-loop task control with ad-hoc scripts
+[TODO: Migrate Example 2 logic to the control panel]
