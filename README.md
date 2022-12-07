@@ -175,7 +175,7 @@ The second task is a maze task where participants navigate through a maze and co
     - Player and UI: In this example, we use a virtual dashboard as the main UI for people to interact with. You can download and import our pre-coded UI dashboard here: [Player UI](unity_packages/PlayerUI_NoSteamVRInput.unitypackage). SteamVR input may be not set correctly. To do that, click Window->SteamVR Input. Create a menu binary input if it does not exist. Save and generate. Open Binding UI, and check if all inputs have been assigned. Adjust canvas size if necessary in Board->Canvas Layer->CanvasLocationControl->Canvas.
     - Then place prefabs `Resources/Prefabs/Board` and `Resources/Prefabs/Players` in the scene. Assign properties under Board UI Manager correctly. This includes `Menu Button`, `Trigger`, `Left Hand`, and `Right Hand`. The Left hand and right hand should be from the Player's hands. 
     - Make `Medieval_Gold/i_gnot` a prefab saved in `Resource/Prefabs/1_ignot` by dragging it to the scene and drag to the corresponding asset folder. Edit the prefab, and attach `Interactable` and `Throwable` component to it. Disable `Use Gravity` and enable `Is Kinematic` in Rigid body component. Attach a `Mesh Collider` component to it. Tick `Convex` option for `Mesh Collider`.
-![Task Setup](imgs/MazeExampleLevelDesign.PNG)
+![Task Setup](imgs/MazeLevelDesign.PNG)
 Figure 2: Unity editor screenshot of the maze task
 1. **Task execution**: 
      - Now we have a UI dashboard. It can be turned on/off by pressing the menu button binded to the controller. We can implement this by adding the following code to the `Update` function (See [complete Task control script](sources/Example2/TaskControl.cs)).
