@@ -21,7 +21,7 @@
       - [Motion tracking data](#motion-tracking-data)
       - [Eye tracking data](#eye-tracking-data)
       - [Bluetooth heart rate monitor](#bluetooth-heart-rate-monitor)
-      - [Kinect? Leap Motion?](#kinect-leap-motion)
+      - [Kinect](#kinect)
     - [Collect data outside Unity](#collect-data-outside-unity)
   - [Apply stimulation feedback](#apply-stimulation-feedback)
   - [Closed-loop task control with ad-hoc scripts](#closed-loop-task-control-with-ad-hoc-scripts)
@@ -82,6 +82,7 @@ The first example is a simple bandit task where participants are asked to pick o
    - Create a trial start button with a cube and a TextMeshPro object (or UI text) and place them on the desk.
    - Create a scoreboard display in front of the desk using TextMeshPro object (or UI text) object.
 ![Task setup](imgs/BanditExampleLevelDesign.PNG)
+Figure 1: Unity editor screenshot of the bandit task
 1. **Task execution**: Create a new game object called TaskControl, and add [task control script (complete version)](sources/Example1/TaskControl.cs) to the game object as a component. Using a separate script to control the global task progress is a neat way to write the task execution logic. This task is simple. The participant touches the start button, then the options (books) are now available to be chosen. Once the participant picks a choice (by touching the book), reward points is displayed in front of them. The start button is now available to be pressed again. We do this step by step.
 
    - Everything starts with the participant pressing the button. We use colliders to do this (so in fact it is touching the button rather than pressing the button). So we create a [button pressing script (complete version)](sources/Example1/ButtonPressing.cs) and attach it to the button object so that when the button is touched by hand, `OnCollisionEnter` will be called (if the button has a collider. If not, simply add a box collider to the button game object).
@@ -162,7 +163,7 @@ The first example is a simple bandit task where participants are asked to pick o
           }
       }
       ```
-   This completes the whole simple experiment design. Of course, we still need to save the behavioural data and possibly connecting and synchronising with other devices like EEG, which will be covered in part 2. Unfortunately due to [Unity Asset Store EULA](https://unity.com/legal/as-terms), we may not distribute the full project containing Asset Store materials, but you can download a build version here: [TODO: Insert download link here]
+   This completes the whole simple experiment design. Of course, we still need to save the behavioural data and possibly connecting and synchronising with other devices like EEG, which will be covered in part 2. Unfortunately due to [Unity Asset Store EULA](https://unity.com/legal/as-terms), we may not distribute the full project containing Asset Store materials, but you can download a build version here: [Example1_Build](Build/Example1-Build.7z).
 
 ## Example - Physical foraging task in a maze
 The second task is a maze task where participants navigate through a maze and collect gold bar that is scattered in the maze. 
@@ -175,6 +176,7 @@ The second task is a maze task where participants navigate through a maze and co
     - Then place prefabs `Resources/Prefabs/Board` and `Resources/Prefabs/Players` in the scene. Assign properties under Board UI Manager correctly. This includes `Menu Button`, `Trigger`, `Left Hand`, and `Right Hand`. The Left hand and right hand should be from the Player's hands. 
     - Make `Medieval_Gold/i_gnot` a prefab saved in `Resource/Prefabs/1_ignot` by dragging it to the scene and drag to the asset folder.
 ![Task Setup](imgs/MazeExampleLevelDesign.PNG)
+Figure 2: Unity editor screenshot of the maze task
 3. **Task execution**: 
      - Now we have a UI dashboard. It can be turned on/off by pressing the menu button binded to the controller. We can implement this by adding the following code to the `Update` function (See [complete Task control script](sources/Example2/TaskControl.cs)).
         ```C#
@@ -316,6 +318,7 @@ The second task is a maze task where participants navigate through a maze and co
 
 The above examples use Unity standard render pipeline which uses [forward rendering](https://docs.unity3d.com/Manual/RenderingPaths.html). It is fast and friendly to low-performance computers / mobile devices, but the graphics quality is not great. Other render pipeline like [High Definition Render Pipeline (HDRP)](https://docs.unity3d.com/Packages/com.unity.render-pipelines.high-definition@14.0/manual/index.html) uses deferred shading as the default rendering path which gives much better quality but is much more computationally expensive.
 ![Jungle](imgs/JungleHDRPExample.PNG)
+Figure 3: Unity editor screenshot of an HDRP rendered environment
 One of our experiments in a realistic jungle environment.
 
 # Part 2 Linking other data streams
@@ -328,20 +331,22 @@ Perhaps, one key difference between Unity-based studies and other conventional 2
 To collect data in Unity, one needs to write or utilize packages that read external data into Unity, which is usually C# programming. 
 #### Motion tracking data
 Point tracking can be added separately with [Vive Tracker](https://www.vive.com/uk/accessory/tracker3/). By attaching a `SteamVR_Behaviour_Pose` component to some game object and correctly configuring Pose input (Note a [SteamVR existing issue](https://steamcommunity.com/app/250820/discussions/4/3949029052301918254/)), the tracking data then can be retrieved from the game object's position.
-[TODO: Add screenshots]
+
 #### Eye tracking data
-With the HTC Vive Pro Eye headset, eye-tracking data can be collected in Unity through [Eye and Facial Tracking SDK](https://developer.vive.com/resources/vive-sense/eye-and-facial-tracking-sdk/). It not only tracks the direction of the eye ball, but also provides real-time pupil sizes.
-[TODO: Add screenshots / code]
+With the HTC Vive Pro Eye headset, eye-tracking data can be collected in Unity through [Eye and Facial Tracking SDK](https://developer.vive.com/resources/vive-sense/eye-and-facial-tracking-sdk/). It not only tracks the direction of the eye ball, but also provides real-time pupil sizes. We used this eye tracking data to track what objects participant were currently looking at. You can [download our Unity Prefabs](unity_packages/Eyetracker.unitypackage) here if you have installed the SDK.
 #### Bluetooth heart rate monitor
 [TODO]
-#### Kinect? Leap Motion?
+#### Kinect
 [TODO]
 ### Collect data outside Unity
 Collecting data outside Unity usually requires some type of communication between Unity and the program collecting the data. Some protocol like [labstreaminglayer](https://github.com/sccn/labstreaminglayer) has Unity package that can help with that. But sometimes, just recording the data from some other external software (e.g. [BrainVision Recorder](https://brainvision.com/products/recorder/)) works as well. The key question is how to synchronize data recorded in a separate software without communicating with Unity. A simple way is to use timestamps. Both Unity and other third-party software records timestamp from the operating system's clock (For researchers who are more familiar with marker synchronization rather than a sequence of timestamps, you can check out [this article by Labstreaminglayer developer](https://labstreaminglayer.readthedocs.io/info/time_synchronization.html)). 
 
 We did develop a series of software aims to resolve this issue in one solution. We developed an application layer simple bi-directional data exchange protocol over TCP (PainLabProtocol). PainLabProtocol is similar to Labstreaminglayer but less sophisticated. Its performance may be poorer compared to other protocols like Labstreaminglayer or more efficient game server protocols over UDP, but it emphasizes data readability (transmit and saved in Javascript) and flexibility in data format. The key software here is an interactive control panel ([PainLabInteractiveControlPanel](https://github.com/ShuangyiTong/PainLabInteractiveControlPanel)). It acts as the server to collect data from different devices that speak PainLabProtocol including [Unity](https://github.com/ShuangyiTong/PainLabDeviceNIDAQDotNet4.5VS2012/blob/master/PainLabDeviceNIDAQDotNet4.5VS2012/PainlabProtocol.cs), [Arduino](https://github.com/ShuangyiTong/PainLabDeviceEmbedded), [NI DAQ](https://github.com/ShuangyiTong/PainLabDeviceNIDAQDotNet4.5VS2012), [Azure speech recognition](https://github.com/ShuangyiTong/PainLabDeviceVoiceRecognitionAzure), and [Brain Products, g.tec LSL connector](https://github.com/ShuangyiTong/PainLabLSLCompatibilityLayerLiveAmp). It is similar to data acquisition software like [BrainVision Recorder](https://brainvision.com/products/recorder/) or [Labrecorder](https://github.com/labstreaminglayer/App-LabRecorder), but it also includes the functionality to send commands to the device and allows you to plug in scripts to control the task easily in real-time.
 
-[TODO: add control panel screenshot]
+![CP](imgs/AllInOneControlPanel.PNG)
+Figure 4: All in one interactive control panel
+![CP2](imgs/InteractiveControlPanelScriptTab.PNG)
+Figure 5: Interactive panel controlled by script with ad-hoc parameter modification during experiment
 ## Apply stimulation feedback
 
 [TODO: simple server/client implementation]
@@ -358,6 +363,6 @@ actionFunction = (device_id, dataframe) => {
     }
 }
 ```
-[TODO: explanation]
+In this example, this Javascript script code is driven by `actionFunction`. Whenever there is new data comes in, this `actionFunction` is called. This resembles the `Update` function in Unity. It has two parameters `device_id` and `dataframe`. Users can write code in the `actionFunction` to give feedback based on the data in the `dataframe`. Here we only give shocks to participants based on a timer. In the next section, we will utilize this control panel for more complex data interactions. 
 ## Closed-loop task control with ad-hoc scripts
 [TODO: Migrate Example 2 logic to the control panel]
