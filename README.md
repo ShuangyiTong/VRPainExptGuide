@@ -21,7 +21,7 @@
       - [Motion tracking data](#motion-tracking-data)
       - [Eye tracking data](#eye-tracking-data)
       - [Bluetooth heart rate monitor](#bluetooth-heart-rate-monitor)
-      - [Kinect? Leap Motion?](#kinect-leap-motion)
+      - [Kinect](#kinect)
     - [Collect data outside Unity](#collect-data-outside-unity)
   - [Apply stimulation feedback](#apply-stimulation-feedback)
   - [Closed-loop task control with ad-hoc scripts](#closed-loop-task-control-with-ad-hoc-scripts)
@@ -82,6 +82,7 @@ The first example is a simple bandit task where participants are asked to pick o
    - Create a trial start button with a cube and a TextMeshPro object (or UI text) and place them on the desk.
    - Create a scoreboard display in front of the desk using TextMeshPro object (or UI text) object.
 ![Task setup](imgs/BanditExampleLevelDesign.PNG)
+Figure 1: Unity editor screenshot of the bandit task
 1. **Task execution**: Create a new game object called TaskControl, and add [task control script (complete version)](sources/Example1/TaskControl.cs) to the game object as a component. Using a separate script to control the global task progress is a neat way to write the task execution logic. This task is simple. The participant touches the start button, then the options (books) are now available to be chosen. Once the participant picks a choice (by touching the book), reward points is displayed in front of them. The start button is now available to be pressed again. We do this step by step.
 
    - Everything starts with the participant pressing the button. We use colliders to do this (so in fact it is touching the button rather than pressing the button). So we create a [button pressing script (complete version)](sources/Example1/ButtonPressing.cs) and attach it to the button object so that when the button is touched by hand, `OnCollisionEnter` will be called (if the button has a collider. If not, simply add a box collider to the button game object).
@@ -162,7 +163,7 @@ The first example is a simple bandit task where participants are asked to pick o
           }
       }
       ```
-   This completes the whole simple experiment design. Of course, we still need to save the behavioural data and possibly connecting and synchronising with other devices like EEG, which will be covered in part 2. Unfortunately due to [Unity Asset Store EULA](https://unity.com/legal/as-terms), we may not distribute the full project containing Asset Store materials, but you can download a build version here: [TODO: Insert download link here]
+   This completes the whole simple experiment design. Of course, we still need to save the behavioural data and possibly connecting and synchronising with other devices like EEG, which will be covered in part 2. Unfortunately due to [Unity Asset Store EULA](https://unity.com/legal/as-terms), we may not distribute the full project containing Asset Store materials, but you can download a build version here: [Example1_Build](Build/Example1-Build.7z).
 
 ## Example - Physical foraging task in a maze
 The second task is a maze task where participants navigate through a maze and collect gold bar that is scattered in the maze. 
@@ -170,12 +171,13 @@ The second task is a maze task where participants navigate through a maze and co
 
 1. **Assets import**: From asset store download and import [HUD for VR - Sterile Future](https://assetstore.unity.com/packages/2d/gui/icons/hud-for-vr-sterile-future-120259), [Outdoor Ground Textures](https://assetstore.unity.com/packages/2d/textures-materials/floors/outdoor-ground-textures-12555), [18 High Resolution Wall Textures](https://assetstore.unity.com/packages/2d/textures-materials/brick/18-high-resolution-wall-textures-12567), [Medieval Gold](https://assetstore.unity.com/packages/3d/props/medieval-gold-14162), [SteamVR](https://assetstore.unity.com/packages/tools/integration/steamvr-plugin-32647).
 2. **Level design**: 
-    - The maze: You can create a maze by deforming 3d cubes into walls. We provide a very simple maze to download to use as an example: [Maze package](unity_packages/Maze.unitypackage).
+    - The maze: You can create a maze by deforming 3d cubes into walls. We provide a very simple maze to download to use as an example: [Maze package](unity_packages/Maze.unitypackage). Place the maze in the scene with position being `(0,0,0)`.
     - Player and UI: In this example, we use a virtual dashboard as the main UI for people to interact with. You can download and import our pre-coded UI dashboard here: [Player UI](unity_packages/PlayerUI_NoSteamVRInput.unitypackage). SteamVR input may be not set correctly. To do that, click Window->SteamVR Input. Create a menu binary input if it does not exist. Save and generate. Open Binding UI, and check if all inputs have been assigned. Adjust canvas size if necessary in Board->Canvas Layer->CanvasLocationControl->Canvas.
     - Then place prefabs `Resources/Prefabs/Board` and `Resources/Prefabs/Players` in the scene. Assign properties under Board UI Manager correctly. This includes `Menu Button`, `Trigger`, `Left Hand`, and `Right Hand`. The Left hand and right hand should be from the Player's hands. 
-    - Make `Medieval_Gold/i_gnot` a prefab saved in `Resource/Prefabs/1_ignot` by dragging it to the scene and drag to the asset folder.
-![Task Setup](imgs/MazeExampleLevelDesign.PNG)
-3. **Task execution**: 
+    - Make `Medieval_Gold/i_gnot` a prefab saved in `Resource/Prefabs/1_ignot` by dragging it to the scene and drag to the corresponding asset folder. Edit the prefab, and attach `Interactable` and `Throwable` component to it. Disable `Use Gravity` and enable `Is Kinematic` in Rigid body component. Attach a `Mesh Collider` component to it. Tick `Convex` option for `Mesh Collider`.
+![Task Setup](imgs/MazeLevelDesign.PNG)
+Figure 2: Unity editor screenshot of the maze task
+1. **Task execution**: 
      - Now we have a UI dashboard. It can be turned on/off by pressing the menu button binded to the controller. We can implement this by adding the following code to the `Update` function (See [complete Task control script](sources/Example2/TaskControl.cs)).
         ```C#
         if (UIManager.userAction == "MenuButtonPressed")
@@ -186,56 +188,50 @@ The second task is a maze task where participants navigate through a maze and co
         }
         ```
         When the menu button is pressed, the `UIManager.userAction` will be set to "MenuButtonPressed". We check it in every `Update` function call and take action (i.e. change the dashboard display status). We need to reset it back to "". The way we do it is different from conventional UI handling where you process everything in some callback function triggered by a key pressing. It is however more modular and keeps the entire control logic within the `Update` function. This advantage will be more obvious when it comes to our external interactive control interface. 
-     - The task is very simple. It consists of two states: `Idle` and `InTrial`. For game design, it is helpful to refer to the [Finite-state machine (FSM)](https://en.wikipedia.org/wiki/Finite-state_machine) as the model. Here, we have two states. When the participant clicks start, the task state transits from `Idle` to `InTrial` and spawn a gold bar for the participant to pick up. When the participant picks up the gold bar, or time is up, the task state goes back to `Idle` again. 
+     - The task is very simple. It consists of two states: `Idle` and `InTrial`. For game design, it is helpful to refer to the [Finite-state machine (FSM)](https://en.wikipedia.org/wiki/Finite-state_machine) as the model. Here, we have two states. When the participant clicks start, the task state transits from `Idle` to `InTrial` and spawn a gold bar for the participant to pick up. When the participant picks up the gold bar (wait for 0.5 second), or time is up, the task state goes back to `Idle` again. 
         ```C#
-        if (TaskState == "Idle")
+        Player player = Player.instance;
+        if (player)
         {
-            if (UIManager.boardCommand == "ConfirmButtonPressed")
+            foreach (Hand hand in player.hands)
             {
-                GenerateItems();
-                UIManager.SetBoardDisplay(false);
-                toggleUI = 0;
-                trialStartTime = Time.time;
-                UIManager.boardCommand = "";
-                TaskState = "InTrial";
-            }
-        }
-        else if (TaskState == "InTrial")
-        {
-            bool foundObject = false;
-            Player player = Player.instance;
-            if (player)
-            {
-                foreach (Hand hand in player.hands)
+                GameObject attachedObject = hand.currentAttachedObject;
+                if (attachedObject != null)
                 {
-                    GameObject attachedObject = hand.currentAttachedObject;
-                    if (attachedObject != null)
+                    if (!foundObject)
                     {
                         foundObject = true;
+                        foundObjectTimer = Time.time;
                     }
                 }
             }
-            
-            if (foundObject)
+        }
+
+        if (foundObject)
+        {
+            if (Time.time - foundObjectTimer > 0.5)
             {
                 UIManager.SetBoardDisplay(true);
                 UIManager.SetMainText("You found the object! Click to continue");
                 toggleUI = 1;
-                TaskState = "Idle";
-                Destroy(GameObject.Find("goldbar"));
-            }
 
-            if ((Time.time - trialStartTime > 60) && !foundObject)
-            {
-                UIManager.SetBoardDisplay(true);
-                UIManager.SetMainText("Time is up! Click to to try again");
-                toggleUI = 1;
                 TaskState = "Idle";
+                foundObject = false;
+                foundObjectTimer = 0;
                 Destroy(GameObject.Find("goldbar"));
             }
         }
+
+        if ((Time.time - trialStartTime > 60) && !foundObject)
+        {
+            UIManager.SetBoardDisplay(true);
+            UIManager.SetMainText("Time is up! Click to to try again");
+            toggleUI = 1;
+            TaskState = "Idle";
+            Destroy(GameObject.Find("goldbar"));
+        }
         ```
-4. **Going through walls**: Now we have completed the task execution logic. One might already notice our walls in the virtual world is useless! If you don't have a wall in the real world, then you can go through a wall in the virtual world. Generally, there are three (or four) ways of dealing with this:
+2. **Going through walls**: Now we have completed the task execution logic. One might already notice our walls in the virtual world is useless! If you don't have a wall in the real world, then you can go through a wall in the virtual world. Generally, there are three (or four) ways of dealing with this:
     
     1. Avoid using walls. Don't add walls unless you really need to.
     2. Fade the screen to black when hitting the wall.
@@ -244,7 +240,7 @@ The second task is a maze task where participants navigate through a maze and co
    
    In commercial VR game development, all strategies are used. However, when we are running experiments, it could be better to use one single moving strategy. For example, in a VR game, you are usually allowed to move with controller buttons as well as real body movement. Unless you want to compare people's preference of this two interaction ways, I think in experiments, to keep the behavioural data more controlled, it is better to either use controllers only or use real body movement. 
 
-   **Fade to black on collision**: The key thing here is to overlay a black layer to the screen output. `OpenVR.Compositor` has a function called `FadeToColor` that allows VR compositor to overlay a colour layer on top of the game's visual output. We also need to detect head collisions with the wall. It is not a good idea to put a collider on the VR camera itself because in Unity the collision can only be detected when there is a rigid body attached to one of the collided objects. We then create a separate game object with a small box collider and non-kinematic rigid body and attach the [following script](sources/Example2/DarkenOnCollision.cs) to it:
+   **Fade to black on collision**: The key thing here is to overlay a black layer to the screen output. `OpenVR.Compositor` has a function called `FadeToColor` that allows VR compositor to overlay a colour layer on top of the the game visual output. We also ned to detect head collisions with the wall. It is not a good idea to put a collider on the VR camera itself because in Unity the collision can only be detected when there is a rigid body attached to one of the collided objects. We attach the [following script (complete version)](sources/Example2/DarkenOnCollision.cs) to `Player` -> `FollowHead` -> `HeadCollider`, make sure `Is Kinematic` is disabled for `HeadCollider`:
    ```C#
     void Update()
     {
@@ -316,6 +312,7 @@ The second task is a maze task where participants navigate through a maze and co
 
 The above examples use Unity standard render pipeline which uses [forward rendering](https://docs.unity3d.com/Manual/RenderingPaths.html). It is fast and friendly to low-performance computers / mobile devices, but the graphics quality is not great. Other render pipeline like [High Definition Render Pipeline (HDRP)](https://docs.unity3d.com/Packages/com.unity.render-pipelines.high-definition@14.0/manual/index.html) uses deferred shading as the default rendering path which gives much better quality but is much more computationally expensive.
 ![Jungle](imgs/JungleHDRPExample.PNG)
+Figure 3: Unity editor screenshot of an HDRP rendered environment
 One of our experiments in a realistic jungle environment.
 
 # Part 2 Linking other data streams
@@ -328,20 +325,22 @@ Perhaps, one key difference between Unity-based studies and other conventional 2
 To collect data in Unity, one needs to write or utilize packages that read external data into Unity, which is usually C# programming. 
 #### Motion tracking data
 Point tracking can be added separately with [Vive Tracker](https://www.vive.com/uk/accessory/tracker3/). By attaching a `SteamVR_Behaviour_Pose` component to some game object and correctly configuring Pose input (Note a [SteamVR existing issue](https://steamcommunity.com/app/250820/discussions/4/3949029052301918254/)), the tracking data then can be retrieved from the game object's position.
-[TODO: Add screenshots]
+
 #### Eye tracking data
-With the HTC Vive Pro Eye headset, eye-tracking data can be collected in Unity through [Eye and Facial Tracking SDK](https://developer.vive.com/resources/vive-sense/eye-and-facial-tracking-sdk/). It not only tracks the direction of the eye ball, but also provides real-time pupil sizes.
-[TODO: Add screenshots / code]
+With the HTC Vive Pro Eye headset, eye-tracking data can be collected in Unity through [Eye and Facial Tracking SDK](https://developer.vive.com/resources/vive-sense/eye-and-facial-tracking-sdk/). It not only tracks the direction of the eye ball, but also provides real-time pupil sizes. We used this eye tracking data to track what objects participant were currently looking at. You can [download our Unity Prefabs](unity_packages/Eyetracker.unitypackage) here if you have installed the SDK.
 #### Bluetooth heart rate monitor
 [TODO]
-#### Kinect? Leap Motion?
+#### Kinect
 [TODO]
 ### Collect data outside Unity
 Collecting data outside Unity usually requires some type of communication between Unity and the program collecting the data. Some protocol like [labstreaminglayer](https://github.com/sccn/labstreaminglayer) has Unity package that can help with that. But sometimes, just recording the data from some other external software (e.g. [BrainVision Recorder](https://brainvision.com/products/recorder/)) works as well. The key question is how to synchronize data recorded in a separate software without communicating with Unity. A simple way is to use timestamps. Both Unity and other third-party software records timestamp from the operating system's clock (For researchers who are more familiar with marker synchronization rather than a sequence of timestamps, you can check out [this article by Labstreaminglayer developer](https://labstreaminglayer.readthedocs.io/info/time_synchronization.html)). 
 
-We did develop a series of software aims to resolve this issue in one solution. We developed an application layer simple bi-directional data exchange protocol over TCP (PainLabProtocol). PainLabProtocol is similar to Labstreaminglayer but less sophisticated. Its performance may be poorer compared to other protocols like Labstreaminglayer or more efficient game server protocols over UDP, but it emphasizes data readability (transmit and saved in Javascript) and flexibility in data format. The key software here is an interactive control panel ([PainLabInteractiveControlPanel](https://github.com/ShuangyiTong/PainLabInteractiveControlPanel)). It acts as the server to collect data from different devices that speak PainLabProtocol including [Unity](https://github.com/ShuangyiTong/PainLabDeviceNIDAQDotNet4.5VS2012/blob/master/PainLabDeviceNIDAQDotNet4.5VS2012/PainlabProtocol.cs), [Arduino](https://github.com/ShuangyiTong/PainLabDeviceEmbedded), [NI DAQ](https://github.com/ShuangyiTong/PainLabDeviceNIDAQDotNet4.5VS2012), [Azure speech recognition](https://github.com/ShuangyiTong/PainLabDeviceVoiceRecognitionAzure), and [Brain Products, g.tec LSL connector](https://github.com/ShuangyiTong/PainLabLSLCompatibilityLayerLiveAmp). It is similar to data acquisition software like [BrainVision Recorder](https://brainvision.com/products/recorder/) or [Labrecorder](https://github.com/labstreaminglayer/App-LabRecorder), but it also includes the functionality to send commands to the device and allows you to plug in scripts to control the task easily in real-time.
+We did develop a series of software aims to resolve this issue in one solution. We developed an application layer simple bi-directional data exchange protocol over TCP (PainLabProtocol). PainLabProtocol is similar to Labstreaminglayer but less sophisticated. Its performance may be poorer compared to other protocols like Labstreaminglayer or more efficient game server protocols over UDP, but it emphasizes data readability (transmit and saved in JavaScript) and flexibility in data format. The key software here is an interactive control panel ([PainLabInteractiveControlPanel](https://github.com/ShuangyiTong/PainLabInteractiveControlPanel)). It acts as the server to collect data from different devices that speak PainLabProtocol including [Unity](https://github.com/ShuangyiTong/PainLabDeviceNIDAQDotNet4.5VS2012/blob/master/PainLabDeviceNIDAQDotNet4.5VS2012/PainlabProtocol.cs), [Arduino](https://github.com/ShuangyiTong/PainLabDeviceEmbedded), [NI DAQ](https://github.com/ShuangyiTong/PainLabDeviceNIDAQDotNet4.5VS2012), [Azure speech recognition](https://github.com/ShuangyiTong/PainLabDeviceVoiceRecognitionAzure), and [Brain Products, g.tec LSL connector](https://github.com/ShuangyiTong/PainLabLSLCompatibilityLayerLiveAmp). It is similar to data acquisition software like [BrainVision Recorder](https://brainvision.com/products/recorder/) or [Labrecorder](https://github.com/labstreaminglayer/App-LabRecorder), but it also includes the functionality to send commands to the device and allows you to plug in scripts to control the task easily in real-time.
 
-[TODO: add control panel screenshot]
+![CP](imgs/AllInOneControlPanel.PNG)
+Figure 4: All in one interactive control panel
+![CP2](imgs/InteractiveControlPanelScriptTab.PNG)
+Figure 5: Interactive panel controlled by script with ad-hoc parameter modification during experiment
 ## Apply stimulation feedback
 
 [TODO: simple server/client implementation]
@@ -358,6 +357,106 @@ actionFunction = (device_id, dataframe) => {
     }
 }
 ```
-[TODO: explanation]
+In this example, this JavaScript script code is driven by `actionFunction`. Whenever there is new data comes in, this `actionFunction` is called. This resembles the `Update` function in Unity. It has two parameters `device_id` and `dataframe`. Users can write code in the `actionFunction` to give feedback based on the data in the `dataframe`. Here we only give shocks to participants based on a timer. In the next section, we will utilize this control panel for more complex data interactions. 
 ## Closed-loop task control with ad-hoc scripts
-[TODO: Migrate Example 2 logic to the control panel]
+We can move the control script out of Unity to the interactive control panel. This would make it easier to interact with other data streams and gives closed-loop task control with more flexibility.
+
+We start from the second example by importing [this package](unity_packages/PainlabProtocol.unitypackage). After importing the package, we can remove the Task Control component from `TaskControl` game object and add `PainlabTask` component that we just imported from the package to it.
+
+There are already some functionalities implemented in `PainlabTask` including position tracking, object that is being picked up, and some UI functions. We are now rewrite everything from Task Control component in JavaScript running in the control panel. We still need a little bit help from the client side, which is in C# code. The only help we need is to write a C# code snippet in `PainlabTask` to help us generate the gold bar. We add two member variables to `TaskControlFrame`:
+```C#
+public int generate_goldbar = -1;
+public int destroy_goldbar = -1;
+```
+Values default to `-1`, we use this as our null/bottom type, meaning the value is not set in the control frame. It is slightly abusing the `int` type's original definition in C#, but it saves much time to write JSON parser ourselves.
+In the `ApplyControlData` function body, add the generating gold bar snippet:
+```C#
+if (generate_goldbar != -1)
+{
+    GameObject goldBar = Resources.Load<GameObject>("Prefabs/1_ignot");
+    var rnd = new System.Random(DateTime.Now.Millisecond);
+    double tick_1 = rnd.NextDouble();
+    double tick_2 = rnd.NextDouble();
+    GameObject initGoldBar = UnityEngine.Object.Instantiate(goldBar, new Vector3((float)(5 * tick_1 - 4.0), 0.5f, (float)(5 * tick_2 - 0.5)), Quaternion.identity);
+    initGoldBar.name = "goldbar";
+}
+if (destroy_goldbar != -1)
+{
+    UnityEngine.Object.Destroy(UnityEngine.GameObject.Find("goldbar"));
+}
+```
+It is also recommended to add the following items to 'data_to_control' object in `Resources/device_descriptor.txt` but not necessary:
+```JSON
+"generate_goldbar": "int",
+"destroy_goldbar": "int"
+```
+Now we have everything done on the Unity side, we can work on the control panel side. The control script is basically a JavaScript rewritten of the C# version.
+```JavaScript
+const { TouchBarSlider } = require("electron");
+const { transpose } = require("underscore");
+
+const UNITYVR_VR_DEVICE_ID = "o8Y6VNWF7orzDfPGCrJh";
+var TaskState = "Idle";
+var current_ui_board = 1;
+var trial_start_time = 0;
+var found_object = false;
+var found_object_timer = 0;
+
+actionFunction = (device_id, dataframe) => {
+    if (dataframe["user_action"] == "MenuButtonPressed") {
+        current_ui_board ^= 1; // toggle 0 and 1
+        sendCommand(UNITYVR_VR_DEVICE_ID, "show_ui_board", current_ui_board);
+        if (current_ui_board == 1) {
+            sendCommand(UNITYVR_VR_DEVICE_ID, "activate_confirm_button", 1);
+        }
+    }
+
+    if (TaskState == "Idle") {
+        if (dataframe["board_command"] == "ConfirmButtonPressed") {
+            sendMultipleCommands(UNITYVR_VR_DEVICE_ID, {
+                "set_board_main_text": "Find the Gold Bar!",
+                "show_ui_board": 0,
+                "generate_goldbar": 1
+            });
+            current_ui_board = 0;
+            trial_start_time = Date.now();
+            TaskState = "InTrial";
+        }
+    } else if (TaskState == "InTrial") {
+        if (dataframe["pickable_object_attached"] != "") {
+            if (!found_object) {
+                found_object = true;
+                found_object_timer = Date.now();
+            }
+        }
+
+        if (found_object) {
+            if (Date.now() - found_object_timer > 500) {
+                sendMultipleCommands(UNITYVR_VR_DEVICE_ID, {
+                    "set_board_main_text": "You found the object! Click to continue",
+                    "show_ui_board": 1,
+                    "destroy_goldbar": 1
+                });
+                current_ui_board = 1;
+                found_object = false;
+                found_object_timer = 0;
+                TaskState = "Idle";
+            }
+        } else if (Date.now() - trial_start_time > 60000) {
+            sendMultipleCommands(UNITYVR_VR_DEVICE_ID, {
+                "set_board_title_text": "Time is up! Click to to try again",
+                "destroy_goldbar": 1
+            });
+            TaskState = "Idle";
+        }
+    }
+}
+```
+One can then add a painful shock as feedback when picking up the object easily by just add one more `sendCommand` line:
+```JavaScript
+...
+        found_object_timer = Date.now();
+        sendCommand("SC91BBkyiIWxnJMipKYk", "normalised_current_level", 3);
+    }
+...
+```

@@ -11,7 +11,7 @@ public class TaskControl : MonoBehaviour
     string TaskState;
     int toggleUI = 1;
     float trialStartTime;
-    
+
     void Start()
     {
         UIManager = GameObject.Find("Board").GetComponent<BoardUIManager>();
@@ -24,7 +24,10 @@ public class TaskControl : MonoBehaviour
     void GenerateItems()
     {
         GameObject goldBar = Resources.Load<GameObject>("Prefabs/1_ignot");
-        GameObject initGoldBar = Instantiate(goldBar, new Vector3(0.5f, 0.5f, 0.5f), Quaternion.identity);
+        var rnd = new System.Random(DateTime.Now.Millisecond);
+        double tick_1 = rnd.NextDouble();
+        double tick_2 = rnd.NextDouble();
+        GameObject initGoldBar = Instantiate(goldBar, new Vector3((float)(5 * tick_1 - 4.0), 0.5f, (float)(5 * tick_2 - 0.5)), Quaternion.identity);
         initGoldBar.name = "goldbar";
     }
 
@@ -66,7 +69,7 @@ public class TaskControl : MonoBehaviour
                     }
                 }
             }
-            
+
             if (foundObject)
             {
                 UIManager.SetBoardDisplay(true);
