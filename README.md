@@ -126,7 +126,7 @@ The first example is a simple bandit task where participants are asked to pick o
           material.SetColor("_Color", Color.white);
       }
       ```
-      Let us go back to `TaskControl.ObjectSelected`. If it is in Trial (after the button is pressed), the reward points is set depending on the choice. Here two choices are associated with deterministically reward, so it is a boring bandit task. If the total trial count `trialCount` exceeds the maximum number of trials `totalTrials`, we will disable the button and the participant won't be able to start a new trial. 
+      Let us go back to `TaskControl.ObjectSelected`. If it is in Trial (after the button is pressed), the reward points are set depending on the choice. Here two choices are associated with deterministically reward, so it is a boring bandit task. If the total trial count `trialCount` exceeds the maximum number of trials `totalTrials`, we will disable the button and the participant won't be able to start a new trial. 
       ```C#
       if (inTrial)
       {
@@ -244,7 +244,7 @@ The second task is a maze task where participants navigate through a maze and co
    
    In commercial VR game development, all strategies are used. However, when we are running experiments, it could be better to use one single moving strategy. For example, in a VR game, you are usually allowed to move with controller buttons as well as real body movement. Unless you want to compare people's preference of this two interaction ways, I think in experiments, to keep the behavioural data more controlled, it is better to either use controllers only or use real body movement. 
 
-   **Fade to black on collision**: The key thing here is to overlay a black layer to the screen output. `OpenVR.Compositor` has a function called `FadeToColor` that allows VR compositor to overlay a colour layer on top of the the game visual output. We also ned to detect head collisions with the wall. It is not a good idea to put a collider on the VR camera itself because in Unity the collision can only be detected when there is a rigid body attached to one of the collided objects. We then create a separate game object with a small box collider and non-kinematic rigid body and attach the [following script](sources/Example2/DarkenOnCollision.cs) to it:
+   **Fade to black on collision**: The key thing here is to overlay a black layer to the screen output. `OpenVR.Compositor` has a function called `FadeToColor` that allows VR compositor to overlay a colour layer on top of the game's visual output. We also need to detect head collisions with the wall. It is not a good idea to put a collider on the VR camera itself because in Unity the collision can only be detected when there is a rigid body attached to one of the collided objects. We then create a separate game object with a small box collider and non-kinematic rigid body and attach the [following script](sources/Example2/DarkenOnCollision.cs) to it:
    ```C#
     void Update()
     {
@@ -274,7 +274,7 @@ The second task is a maze task where participants navigate through a maze and co
         hmd.gameObject.GetComponent<UnityEngine.SpatialTracking.TrackedPoseDriver>().trackingType = UnityEngine.SpatialTracking.TrackedPoseDriver.TrackingType.RotationOnly;
    }
    ```
-   which change the `TrackedPoseDriver` to `RotationOnly`, and replace `SteamVR_Behaviour_Pose` component for each hand with the following `Custom_Behaviour_Pose` component:
+   which changes the `TrackedPoseDriver` to `RotationOnly`, and replace `SteamVR_Behaviour_Pose` component for each hand with the following `Custom_Behaviour_Pose` component:
     ```C#
     using System;
     using System.Threading;
