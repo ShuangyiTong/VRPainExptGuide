@@ -23,7 +23,7 @@
       - [Bluetooth heart rate monitor](#bluetooth-heart-rate-monitor)
       - [Kinect](#kinect)
     - [Collect data outside Unity](#collect-data-outside-unity)
-  - [Apply stimulation feedback](#apply-stimulation-feedback)
+  - [Apply stimulation feedback with TCP sockets](#apply-stimulation-feedback-with-tcp-sockets)
   - [Closed-loop task control with ad-hoc scripts](#closed-loop-task-control-with-ad-hoc-scripts)
 
 ## Overview
@@ -341,9 +341,216 @@ We did develop a series of software aims to resolve this issue in one solution. 
 Figure 4: All in one interactive control panel
 ![CP2](imgs/InteractiveControlPanelScriptTab.PNG)
 Figure 5: Interactive panel controlled by script with ad-hoc parameter modification during experiment
-## Apply stimulation feedback
+## Apply stimulation feedback with TCP sockets
 
-[TODO: simple server/client implementation]
+We enable inter-process communication between Unity and outside devices for real-time data transmission via TCP sockets and socket API. This can be done in various programming languages. Here we show a brief example of two-way communication between the server (Python script) and client (Unity GameObject with C# script), where the server can also work for processing tasks on external devices (e.g. real shock generation of the stimulators). Especially for the stimulation feedback, the Unity client will first know when and how to generate the stimulation when the task is ongoing, and send the corresponding message to the Python server, where you can meanwhile process a real stimulation through an I/O Device connecting the server and stimulator. A detailed [example](https://github.com/Chronowanderer/CogPainExp-TCP-connection) of its application will be explained afterwards.
+
+The following TCP server script is built in Python, meanwhile keeps listening to messages from the Unity client. Make this as an independent script and run it with Python before launching the Unity task. 
+```python
+import time
+import socket
+import os
+
+# Make sure the following address setup is consistent between Python server and Unity client.
+HOST = "127.0.0.1"
+PORT = 60000
+
+class SocketConnection:
+    def __init__(self, host, port):
+        self.address = (host, port)
+
+    def connect(self): # Server implementation
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        server.bind(self.address)
+        server.listen(5)
+        try:
+            connectionFlag = False
+            if not connectionFlag:
+                clientsocket, _ = server.accept()
+                # print("Connection accepted.")
+            while True:
+                connectionFlag = self.read_from_client(clientsocket) # Keep listening message from client.
+            if not connectionFlag:
+                clientsocket.close()
+        except IOError as e:
+            print(e.strerror)
+
+    def read_from_client(self, clientsocket): # Listen message from client.
+        content = None
+        try:
+            input = clientsocket.recv(4096)
+            if input:
+                content = input.decode('ascii')
+        except IOError as e:
+            print(e.strerror)
+
+        if content:
+            return True
+        else:
+            return False
+    
+    def send_to_client(self, clientsocket, content = ""): # Send message to client.
+    # Not implemented in this brief example. Feel free to use/modify this function with your own needs.
+        try:
+            clientsocket.send(content)
+            # print(time.time(), ': Message ', output, ' sent.')
+            pass
+        except IOError as e:
+            print(e.strerror)
+        
+        return 0
+
+if __name__ == "__main__":
+    SocketConnection(HOST, PORT).connect() # Launch the server.
+
+```
+
+The following TCP client script is built in Unity, meanwhile keeping listening messages from the Python server. Attach this C# script to an empty GameObject in a scene that is only called once (usually as the first scene when launching the Unity task). The `DontDestroyOnLoad` function would ensure the client to exist in the task for a persistent connection with the server. 
+```C#
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
+
+using System;
+using System.Text;
+using System.Net;
+using System.Net.Sockets;
+using System.Collections;
+using System.Collections.Generic;
+
+
+public class UnityCallPython : MonoBehaviour
+{
+    [Tooltip("IP address")]
+    public string ip = "127.0.0.1";
+    [Tooltip("Port number")]
+    public int port = 60000;
+    
+    [Tooltip("Scene names")]
+    public string expScene;
+    
+    [Tooltip("Blocking time (sec)")]
+    public float maxWaitingTime = 30f;
+    public float sceneBlockingTime = 1f;
+
+    public Socket clientSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+    
+    long startTime;
+    
+    // Client setup with finding server through the corresponding address.
+    private void Awake()
+    {
+        try
+        {
+            clientSocket.Connect(new IPEndPoint(IPAddress.Parse(ip), port));
+            Debug.Log("Connected!");
+            Shock(0, -100); // Send a test stimulation message.
+        }
+        catch (Exception)
+        {
+            Debug.Log("Connection Error!");
+        }
+
+        DontDestroyOnLoad(this.gameObject);
+        startTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+    }
+    
+    // Keep listening from server for the task trigger signal. A real application is to wait for the TR pulse from MRI scanner to launch the task.
+    private void Update()
+    {
+        long currentTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+        if (currentTime - startTime > sceneBlockingTime * 1000)
+        {
+            ReceiveTR(maxWaitingTime);
+            SceneManager.LoadScene(expScene);
+        }
+    }
+    
+    // Stimulation message.
+    public void Shock(int bodyPart, float shockingDuration)
+    {
+        SendMessage(bodyPart.ToString(), shockingDuration.ToString());
+    }
+    
+    // Send message to server.
+    public void SendMessage(params string[] argvs)
+    {
+        string content = "";
+        if (argvs != null)
+        {
+            foreach (string item in argvs)
+            {
+                content += " " + item;
+            }
+        }
+
+        try
+        {
+            byte[] byteData = Encoding.ASCII.GetBytes(content);
+            clientSocket.Send(byteData);
+        }
+        catch (ArgumentNullException ane)
+        {
+            Console.WriteLine("ArgumentNullException : {0}", ane.ToString());
+        }
+        catch (SocketException se)
+        {
+            Console.WriteLine("SocketException : {0}", se.ToString());
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("Unexpected exception : {0}", e.ToString());
+        }
+    }
+    
+    // Receive message from the server for the task trigger signal. 
+    public void ReceiveTR(float maxTime)
+    {
+        long time = new DateTimeOffset(DateTime.Now).ToUnixTimeSeconds();
+
+        bool TR_flag = false;
+        bool TR_first = false; // ignoring the first jammed input
+
+        while (new DateTimeOffset(DateTime.Now).ToUnixTimeSeconds() - time < maxTime)
+        {
+            // Waiting for TR signal to start the task
+            try
+            {
+                string data = null;
+                byte[] bytes = null;
+                bytes = new byte[1024];
+                int bytesRec = clientSocket.Receive(bytes);
+                data = Encoding.ASCII.GetString(bytes, 0, bytesRec);
+
+                if (Int32.Parse(data[data.Length - 1].ToString()) > 0)
+                {
+                    if (TR_first)
+                    {
+                        TR_flag = true;
+                        break;
+                    }
+                    TR_first = true;
+                }
+            }
+            catch (Exception e)
+            {
+                TR_flag = true;
+                Debug.Log("TR Retrieval Error!");
+                Debug.Log(e);
+                break;
+            }
+            Shock(0, -100); // Send a test stimulation message.
+        }
+        if (!TR_flag)
+        {
+            Debug.Log("TR Retrieval exceeds Tolerance Time!");
+        }
+    }
+
+}
+```
+See a more detailed [example](https://github.com/Chronowanderer/CogPainExp-TCP-connection) of its application on real-time task stimulation. Two different stimulators (DS5) are connected to an external I/O Device (NI USB-6212) through different ports, which is then connected to the Python server. The I/O Device is also connected with a 1-0 task trigger (e.g. for TR pulse from the scanner), of which the signal comes to the server and then is sent to the Unity client to launch the task at an appropriate time. On the other hand, the Unity client is attached to a persistent non-visible GameObject in the Unity task. When the player has done something for a stimulation, the corresponding stimulation information message is directly sent from the Unity client to the Python server, which then generates a real stimulation from those stimulators with the help of the I/O device. Both the 1-0 trigger data and stimulation data are recorded and saved based on the server system time, so that to enable the temporal alignment between task stimulation and trigger timing.
 
 With the interactive control panel, here is a simple example that sends shock every 1 second.
 ```javascript
