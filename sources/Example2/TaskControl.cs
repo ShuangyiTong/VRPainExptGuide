@@ -23,7 +23,7 @@ public class TaskControl : MonoBehaviour
 
     void GenerateItems()
     {
-        GameObject goldBar = Resources.Load<GameObject>("Prefabs/1_ignot");
+        GameObject goldBar = Resources.Load<GameObject>("Prefabs/i_gnot");
         var rnd = new System.Random(DateTime.Now.Millisecond);
         double tick_1 = rnd.NextDouble();
         double tick_2 = rnd.NextDouble();

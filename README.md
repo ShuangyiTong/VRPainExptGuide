@@ -23,7 +23,9 @@
       - [Bluetooth heart rate monitor](#bluetooth-heart-rate-monitor)
       - [Kinect](#kinect)
     - [Collect data outside Unity](#collect-data-outside-unity)
-  - [Apply stimulation feedback with TCP sockets](#apply-stimulation-feedback-with-tcp-sockets)
+  - [Apply stimulation feedback](#apply-stimulation-feedback)
+    - [Unity inter-process communication with TCP sockets](#unity-inter-process-communication-with-tcp-sockets)
+    - [Unified data streaming software](#unified-data-streaming-software)
   - [Closed-loop task control with ad-hoc scripts](#closed-loop-task-control-with-ad-hoc-scripts)
 
 ## Overview
@@ -169,7 +171,7 @@ Figure 1: Unity editor screenshot of the bandit task
 
 
 You would essentially create a `KeyFrame` object, equivalent to each row in a Pandas DataFrame (if you are familiar with Pandas). 
-```
+```C#
 [Serializable]
 public class KeyFrame
 {
@@ -191,7 +193,7 @@ public class KeyFrame
 ```
 
 And write a string to a file and save it as csv.
-```
+```C#
 public string ToCSV()
     {
         var sb = new StringBuilder("Trial,Action,ReactionTime,Outcome");
@@ -215,7 +217,7 @@ The second task is a maze task where participants navigate through a maze and co
     - The maze: You can create a maze by deforming 3d cubes into walls. We provide a very simple maze to download to use as an example: [Maze package](unity_packages/Maze.unitypackage). Place the maze in the scene with position being `(0,0,0)`.
     - Player and UI: In this example, we use a virtual dashboard as the main UI for people to interact with. You can download and import our pre-coded UI dashboard here: [Player UI](unity_packages/PlayerUI_NoSteamVRInput.unitypackage). SteamVR input may be not set correctly. To do that, click Window->SteamVR Input. Create a menu binary input if it does not exist. Save and generate. Open Binding UI, and check if all inputs have been assigned. Adjust canvas size if necessary in Board->Canvas Layer->CanvasLocationControl->Canvas.
     - Then place prefabs `Resources/Prefabs/Board` and `Resources/Prefabs/Players` in the scene. Assign properties under Board UI Manager correctly. This includes `Menu Button`, `Trigger`, `Left Hand`, and `Right Hand`. The Left hand and right hand should be from the Player's hands. 
-    - Make `Medieval_Gold/i_gnot` a prefab saved in `Resource/Prefabs/1_ignot` by dragging it to the scene and drag to the corresponding asset folder. Edit the prefab, and attach `Interactable` and `Throwable` component to it. Disable `Use Gravity` and enable `Is Kinematic` in Rigid body component. Attach a `Mesh Collider` component to it. Tick `Convex` option for `Mesh Collider`.
+    - Make `Medieval_Gold/i_gnot` a prefab saved in `Resource/Prefabs/i_gnot` by dragging it to the scene and drag to the corresponding asset folder. Edit the prefab, and attach `Interactable` and `Throwable` component to it. Disable `Use Gravity` and enable `Is Kinematic` in Rigid body component. Attach a `Mesh Collider` component to it. Tick `Convex` option for `Mesh Collider`.
 ![Task Setup](imgs/MazeLevelDesign.PNG)
 Figure 2: Unity editor screenshot of the maze task
 1. **Task execution**: 
@@ -346,6 +348,8 @@ Figure 2: Unity editor screenshot of the maze task
         }
     }
     ```
+    We also need to modify `com.unity.xr.legacyinputhelpers\Runtime\TrackedPoseDriver\TrackedPoseDriver.cs` to expose `trackedPosition`.
+    
     One thing to note is once you disable real movements in VR, it is important to make sure participants' heads are still. Moving physically while not moving visually can cause strong motion sickness. 
 
     **Add offset to the headset**: Another popular solution in VR games is to add offset to the headset if the headset is moving into the virtual wall. However, one problem with this is the offset can add up and it could be too much that the centre of the virtual world is on the edge of the real world. Usually, those games implement a reset feature that resets the virtual centre to the current position. For running experiments, this extra unnatural re-centre feature could be a confounder for the behavioural data depending on the research question of your study.
@@ -382,7 +386,9 @@ We did develop a series of software aims to resolve this issue in one solution. 
 Figure 4: All in one interactive control panel
 ![CP2](imgs/InteractiveControlPanelScriptTab.PNG)
 Figure 5: Interactive panel controlled by script with ad-hoc parameter modification during experiment
-## Apply stimulation feedback with TCP sockets
+## Apply stimulation feedback
+
+### Unity inter-process communication with TCP sockets
 
 We enable inter-process communication between Unity and outside devices for real-time data transmission via TCP sockets and socket API. This can be done in various programming languages. Here we show a brief example of two-way communication between the server (Python script) and client (Unity GameObject with C# script), where the server can also work for processing tasks on external devices (e.g. real shock generation of the stimulators). Especially for the stimulation feedback, the Unity client will first know when and how to generate the stimulation when the task is ongoing, and send the corresponding message to the Python server, where you can meanwhile process a real stimulation through an I/O Device connecting the server and stimulator. A detailed [example](https://github.com/Chronowanderer/CogPainExp-TCP-connection) of its application will be explained afterwards.
 
@@ -593,7 +599,9 @@ public class UnityCallPython : MonoBehaviour
 ```
 See a more detailed [example](https://github.com/Chronowanderer/CogPainExp-TCP-connection) of its application on real-time task stimulation. Two different stimulators (DS5) are connected to an external I/O Device (NI USB-6212) through different ports, which is then connected to the Python server. The I/O Device is also connected with a 1-0 task trigger (e.g. for TR pulse from the scanner), of which the signal comes to the server and then is sent to the Unity client to launch the task at an appropriate time. On the other hand, the Unity client is attached to a persistent non-visible GameObject in the Unity task. When the player has done something for a stimulation, the corresponding stimulation information message is directly sent from the Unity client to the Python server, which then generates a real stimulation from those stimulators with the help of the I/O device. Both the 1-0 trigger data and stimulation data are recorded and saved based on the server system time, so that to enable the temporal alignment between task stimulation and trigger timing.
 
-With the interactive control panel, here is a simple example that sends shock every 1 second.
+### Unified data streaming software
+
+With our [interactive control panel](https://github.com/ShuangyiTong/PainLabInteractiveControlPanel), here is a simple example that sends shock every 1 second.
 ```javascript
 const stimulator_id = "SC91BBkyiIWxnJMipKYk";
 var last_shocked = Date.now();
@@ -621,7 +629,7 @@ In the `ApplyControlData` function body, add the generating gold bar snippet:
 ```C#
 if (generate_goldbar != -1)
 {
-    GameObject goldBar = Resources.Load<GameObject>("Prefabs/1_ignot");
+    GameObject goldBar = Resources.Load<GameObject>("Prefabs/i_gnot");
     var rnd = new System.Random(DateTime.Now.Millisecond);
     double tick_1 = rnd.NextDouble();
     double tick_2 = rnd.NextDouble();
