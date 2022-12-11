@@ -83,7 +83,7 @@ The first example is a simple bandit task where participants are asked to pick o
    - Create a scoreboard display in front of the desk using TextMeshPro object (or UI text) object.
 ![Task setup](imgs/BanditExampleLevelDesign.PNG)
 Figure 1: Unity editor screenshot of the bandit task
-1. **Task execution**: Create a new game object called TaskControl, and add [task control script (complete version)](sources/Example1/TaskControl.cs) to the game object as a component. Using a separate script to control the global task progress is a neat way to write the task execution logic. This task is simple. The participant touches the start button, then the options (books) are now available to be chosen. Once the participant picks a choice (by touching the book), reward points is displayed in front of them. The start button is now available to be pressed again. We do this step by step.
+4. **Task execution**: Create a new game object called TaskControl, and add [task control script (complete version)](sources/Example1/TaskControl.cs) to the game object as a component. Using a separate script to control the global task progress is a neat way to write the task execution logic. This task is simple. The participant touches the start button, then the options (books) are now available to be chosen. Once the participant picks a choice (by touching the book), reward points is displayed in front of them. The start button is now available to be pressed again. We do this step by step.
 
    - Everything starts with the participant pressing the button. We use colliders to do this (so in fact it is touching the button rather than pressing the button). So we create a [button pressing script (complete version)](sources/Example1/ButtonPressing.cs) and attach it to the button object so that when the button is touched by hand, `OnCollisionEnter` will be called (if the button has a collider. If not, simply add a box collider to the button game object).
       ```C#
@@ -164,6 +164,47 @@ Figure 1: Unity editor screenshot of the bandit task
       }
       ```
    This completes the whole simple experiment design. Of course, we still need to save the behavioural data and possibly connecting and synchronising with other devices like EEG, which will be covered in part 2. Unfortunately due to [Unity Asset Store EULA](https://unity.com/legal/as-terms), we may not distribute the full project containing Asset Store materials, but you can download a build version here: [Example1_Build](Build/Example1-Build.7z).
+
+5. **(Optional) Saving user data**: In order to save user data like choices and reaction times for each trial, we need to use serialization in C#, which allows us to save object into a stream of bytes to store or transmit into memory. This is necesaary as we don't have a handy library equivalent to Pandas in Python which we can use to store or manipulate csv data. As you'll see in tomorrow's tutorial, the same concept is used in the control panel used for communicating with other devices. We will modify the `TaskControl` script to include the functionality of saving data, modified script can be found here: [TaskControlWithSaving.cs](sources/Example1/TaskControlWithSaving.cs). Replace your old `TaskControl.cs` script with this modified one.
+
+
+You would essentially create a `KeyFrame` object, equivalent to each row in a Pandas DataFrame (if you are familiar with Pandas). 
+```
+[Serializable]
+public class KeyFrame
+{
+    public int Trial;
+    public int Action;
+    public float ReactionTime;
+    public float Outcome;
+
+    // public KeyFrame(){}
+
+    public KeyFrame (int trial, int action, float reactiontime, float outcome)
+    {
+        Trial = trial;
+        Action = action;
+        ReactionTime = reactiontime;
+        Outcome = outcome;
+    }
+}
+```
+
+And write a string to a file and save it as csv.
+```
+public string ToCSV()
+    {
+        var sb = new StringBuilder("Trial,Action,ReactionTime,Outcome");
+        foreach(var frame in keyFrames)
+        {
+            sb.Append('\n').Append(frame.Trial.ToString()).Append(',').Append(frame.Action.ToString()).Append(',').Append(frame.ReactionTime.ToString()).Append(',').Append(frame.Outcome.ToString());
+        }
+
+        return sb.ToString();
+    }
+
+```
+You will also need to change all of the references to `TaskControl` in other scripts (such as `ChoiceHanlding.cs` and `ButtonPressing.cs`) to `TaskControlWithSaving`. You can see a sample output (saved) csv [here](sources/Example1/output.csv). Just like how you have saved the data to csv, you can also read from a csv with trials and outcomes to have stochastic and non-stationary outcomes (but that is beyond the scope of this tutorial due to time constraints). 
 
 ## Example - Physical foraging task in a maze
 The second task is a maze task where participants navigate through a maze and collect gold bar that is scattered in the maze. 
