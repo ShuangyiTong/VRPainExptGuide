@@ -381,8 +381,7 @@ Goals of this lab are to discuss and demonstrate additional techniques for colle
 -   Synchronous versus asynchronous communication
 -   Inter-process data communication patterns
 -   Using a database to asynchronously capture and provide data to VR applications
--   Key processing constructs inside virtual reality development products like Unity, especially Coroutines and how they differ from frame rate-coupled processes
--   
+-   Key processing constructs inside virtual reality development products like Unity, especially Coroutines and how they differ from frame rate-coupled processes  
 The lab will focus on asynchronously collecting HR data from an optical sensor and displaying it in real time within a Unity virtual reality environment. 
 
 We are going to use an inexpensive Bluetooth device (Polar Verity Sense), pair it with the Windows laptop, and read the HR data from the device and continuously display the subject’s heart rate inside Unity VR.  
