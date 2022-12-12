@@ -20,8 +20,7 @@
     - [Collect data in Unity](#collect-data-in-unity)
       - [Motion tracking data](#motion-tracking-data)
       - [Eye tracking data](#eye-tracking-data)
-      - [Bluetooth heart rate monitor](#bluetooth-heart-rate-monitor)
-      - [Kinect](#kinect)
+      - [Integrating A Heart Rate (HR) Monitor into Unity VR](#integrating-a-heart-rate-hr-monitor-into-unity-vr)
     - [Collect data outside Unity](#collect-data-outside-unity)
   - [Apply stimulation feedback](#apply-stimulation-feedback)
     - [Unity inter-process communication with TCP sockets](#unity-inter-process-communication-with-tcp-sockets)
@@ -373,10 +372,29 @@ Point tracking can be added separately with [Vive Tracker](https://www.vive.com/
 
 #### Eye tracking data
 With the HTC Vive Pro Eye headset, eye-tracking data can be collected in Unity through [Eye and Facial Tracking SDK](https://developer.vive.com/resources/vive-sense/eye-and-facial-tracking-sdk/). It not only tracks the direction of the eye ball, but also provides real-time pupil sizes. We used this eye tracking data to track what objects participant were currently looking at. You can [download our Unity Prefabs](unity_packages/Eyetracker.unitypackage) here if you have installed the SDK.
-#### Bluetooth heart rate monitor
-[TODO]
-#### Kinect
-[TODO]
+#### Integrating A Heart Rate (HR) Monitor into Unity VR
+
+Goals of this lab are to discuss and demonstrate additional techniques for collecting sensor data and making it available for use within VR. We’ll work with the following concepts:
+-   Bluetooth-based sensor connectivity and data integration
+-   Simply SQL database usage
+-   Database integration into UnityVR
+-   Synchronous versus asynchronous communication
+-   Inter-process data communication patterns
+-   Using a database to asynchronously capture and provide data to VR applications
+-   Key processing constructs inside virtual reality development products like Unity, especially Coroutines and how they differ from frame rate-coupled processes
+-   
+The lab will focus on asynchronously collecting HR data from an optical sensor and displaying it in real time within a Unity virtual reality environment. 
+
+We are going to use an inexpensive Bluetooth device (Polar Verity Sense), pair it with the Windows laptop, and read the HR data from the device and continuously display the subject’s heart rate inside Unity VR.  
+
+Polar Verity Sense is an optical heart rate monitor that provides freedom of movement and multiple options for viewing and recording your heart rate. With Bluetooth®, ANT+, and internal 
+
+The device is a versatile high-quality optical heart rate sensor that measures heart rate from your arm or temple. It's a great alternative to heart rate chest straps or wrist based devices. 
+
+![](imgs/WristHeartRateBand.png)
+
+For more information, please refer to this document [Integrating A Heart Rate Sensor Unity VR -- Written by Doug Nelson](docs/Integrating%20A%20Heart%20Rate%20Sensor%20Unity%20VR%20--%20Written%20by%20Doug%20Nelson.docx)
+
 ### Collect data outside Unity
 Collecting data outside Unity usually requires some type of communication between Unity and the program collecting the data. Some protocol like [labstreaminglayer](https://github.com/sccn/labstreaminglayer) has Unity package that can help with that. But sometimes, just recording the data from some other external software (e.g. [BrainVision Recorder](https://brainvision.com/products/recorder/)) works as well. The key question is how to synchronize data recorded in a separate software without communicating with Unity. A simple way is to use timestamps. Both Unity and other third-party software records timestamp from the operating system's clock (For researchers who are more familiar with marker synchronization rather than a sequence of timestamps, you can check out [this article by Labstreaminglayer developer](https://labstreaminglayer.readthedocs.io/info/time_synchronization.html)). 
 
